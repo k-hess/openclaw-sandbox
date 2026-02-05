@@ -22,7 +22,14 @@ RUN npm install -g pnpm
 
 # Install moltbot (CLI is still named clawdbot until upstream renames)
 # Pin to specific version for reproducible builds
+# Explicitly verify and create bin symlink - npm global linking can be unreliable
+# in sandbox container environments
 RUN npm install -g clawdbot@2026.1.24-3 \
+    && if ! command -v clawdbot >/dev/null 2>&1; then \
+         echo "clawdbot not on PATH, creating symlink manually..." \
+         && ENTRY=$(node -e "console.log(require('/usr/local/lib/node_modules/clawdbot/package.json').bin?.clawdbot || require('/usr/local/lib/node_modules/clawdbot/package.json').bin || '')") \
+         && ln -sf "/usr/local/lib/node_modules/clawdbot/$ENTRY" /usr/local/bin/clawdbot; \
+       fi \
     && clawdbot --version
 
 # Create moltbot directories (paths still use clawdbot until upstream renames)
